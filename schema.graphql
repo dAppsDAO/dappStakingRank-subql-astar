@@ -1,0 +1,20 @@
+type Contract @entity {
+  id: ID! #SmartContract
+  totalReward: Float!
+  rewards: [dAppStakingReward] @derivedFrom(field: "contract")
+}
+
+type dAppStakingReward @entity {
+  id: ID! #blockHeight-eventIdx
+  account: Account!
+  contract: Contract!
+  reward: Float! #BalanceOf
+  eraIndex: Int!
+  timestamp: Date!
+}
+
+type Account @entity {
+  id: ID! #address
+  totalRewarded: Float!
+  rewards: [dAppStakingReward] @derivedFrom(field: "account")
+}
