@@ -12,12 +12,12 @@ export async function handleDAppStakingReward(event: SubstrateEvent): Promise<vo
   const balance = correctBalance(balanceOf as Balance)
   const accountId = account.toString()
   const smartContractObj = JSON.parse(smartContract.toString())
-  logger.info("smartContractObj.hasOwnProperty(evm)")
-  logger.info(smartContractObj.hasOwnProperty("evm"))
-  logger.info(smartContractObj.hasOwnProperty("wasm"))
+  // logger.info("smartContractObj.hasOwnProperty(evm)")
+  // logger.info(smartContractObj.hasOwnProperty("evm"))
+  // logger.info(smartContractObj.hasOwnProperty("wasm"))
   const contractType = smartContractObj.hasOwnProperty("wasm") ? "wasm" : "evm"
   const contractId = smartContractObj[contractType]
-  logger.info("\nevm: " + contractId)
+  // logger.info("\nevm: " + contractId)
   await ensureAccount(accountId, balance)
   await ensureContract(contractId, balance)
   const entity = new DAppStakingReward(`${event.block.block.header.number}-${event.idx.toString()}`)
