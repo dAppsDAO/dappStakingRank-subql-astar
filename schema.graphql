@@ -8,9 +8,15 @@ type DAppStakingReward @entity {
   id: ID! #blockHeight-eventIdx
   account: Account!
   contract: Contract!
+  contractType: ContractType!
   reward: Float! #BalanceOf
   eraIndex: Int!
   timestamp: Date!
+}
+
+enum ContractType {
+  EVM
+  WASM
 }
 
 type Account @entity {
