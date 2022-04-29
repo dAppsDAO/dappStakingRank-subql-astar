@@ -1,5 +1,5 @@
 import { SubstrateEvent } from "@subql/types"
-import { Contract, DAppStakingReward, Account } from "../types"
+import { Contract, DAppStakingReward, Account, ContractType } from "../types"
 import { Balance } from "@polkadot/types/interfaces"
 import { u32 } from "@polkadot/types"
 
@@ -11,13 +11,19 @@ export async function handleDAppStakingReward(event: SubstrateEvent): Promise<vo
   } = event
   const balance = correctBalance(balanceOf as Balance)
   const accountId = account.toString()
-  const contractId = JSON.parse(smartContract.toString())["evm"]
+  const smartContractObj = JSON.parse(smartContract.toString())
+  logger.info("smartContractObj.hasOwnProperty(evm)")
+  logger.info(smartContractObj.hasOwnProperty("evm"))
+  logger.info(smartContractObj.hasOwnProperty("wasm"))
+  const contractType = smartContractObj.hasOwnProperty("wasm") ? "wasm" : "evm"
+  const contractId = smartContractObj[contractType]
   logger.info("\nevm: " + contractId)
   await ensureAccount(accountId, balance)
   await ensureContract(contractId, balance)
   const entity = new DAppStakingReward(`${event.block.block.header.number}-${event.idx.toString()}`)
   entity.accountId = accountId
   entity.contractId = contractId
+  entity.contractType = ContractType[contractType.toUpperCase()]
   entity.reward = balance
   entity.eraIndex = (era as u32).toNumber()
   entity.timestamp = event.block.timestamp
