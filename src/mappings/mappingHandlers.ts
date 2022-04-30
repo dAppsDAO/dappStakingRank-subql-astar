@@ -9,12 +9,9 @@ export async function handleDAppStakingReward(event: SubstrateEvent): Promise<vo
       data: [account, smartContract, era, balanceOf],
     },
   } = event
-  const balance = correctBalance(balanceOf as Balance)
+  const balance = correctBalance((balanceOf as Balance).toBigInt())
   const accountId = account.toString()
   const smartContractObj = JSON.parse(smartContract.toString())
-  // logger.info("smartContractObj.hasOwnProperty(evm)")
-  // logger.info(smartContractObj.hasOwnProperty("evm"))
-  // logger.info(smartContractObj.hasOwnProperty("wasm"))
   const contractType = smartContractObj.hasOwnProperty("wasm") ? "wasm" : "evm"
   const contractId = smartContractObj[contractType]
   // logger.info("\nevm: " + contractId)
@@ -54,8 +51,8 @@ function insertStr(str, index, insert) {
   return str.slice(0, index) + insert + str.slice(index, str.length)
 }
 
-function correctBalance(balanceOf: Balance): number {
-  let balance = (balanceOf as Balance).toString()
+function correctBalance(balanceOf: BigInt): number {
+  let balance = balanceOf.toString()
   while (balance.length < 18) {
     balance = "0" + balance
   }
