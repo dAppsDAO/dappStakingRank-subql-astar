@@ -1,5 +1,5 @@
 import { SubstrateEvent } from "@subql/types"
-import { Contract, DAppStakingReward, Account, ContractType } from "../types"
+import { Contract, DAppStakingReward, Account, ContractType, AllClaimedReward } from "../types"
 import { Balance } from "@polkadot/types/interfaces"
 import { u32 } from "@polkadot/types"
 
@@ -17,6 +17,7 @@ export async function handleDAppStakingReward(event: SubstrateEvent): Promise<vo
   // logger.info("\nevm: " + contractId)
   await ensureAccount(accountId, balance)
   await ensureContract(contractId, balance)
+  await ensureAllClaimedReward(balance)
   const entity = new DAppStakingReward(`${event.block.block.header.number}-${event.idx.toString()}`)
   entity.accountId = accountId
   entity.contractId = contractId
@@ -45,6 +46,18 @@ async function ensureContract(contractId: string, balance: number): Promise<void
   }
   contract.totalReward += balance
   await contract.save()
+}
+
+async function ensureAllClaimedReward(balance: number): Promise<void> {
+  let allClaimedReward = await AllClaimedReward.get("1")
+  if (!allClaimedReward) {
+    let allClaimedReward = new AllClaimedReward("1")
+    allClaimedReward.amount = 0
+    allClaimedReward.count = BigInt(0)
+  }
+  allClaimedReward.amount += balance
+  allClaimedReward.count++
+  await allClaimedReward.save()
 }
 
 function insertStr(str, index, insert) {
