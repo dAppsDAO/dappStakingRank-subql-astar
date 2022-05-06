@@ -1,7 +1,51 @@
 import { SubstrateEvent } from "@subql/types"
-import { Contract, DAppStakingReward, Account, ContractType, AllClaimedReward } from "../types"
+import { Contract, DAppStakingReward, Account, ContractType, AllClaimedReward, UnbondAndUnstake, BondAndStake } from "../types"
 import { Balance } from "@polkadot/types/interfaces"
 import { u32 } from "@polkadot/types"
+
+export async function handleBondAndStake(event: SubstrateEvent): Promise<void> {
+  const {
+    event: {
+      data: [account, smartContract, balanceOf],
+    },
+  } = event
+  const accountId = account.toString()
+  const balance = correctBalance((balanceOf as Balance).toBigInt())
+  const smartContractObj = JSON.parse(smartContract.toString())
+  const contractType = smartContractObj.hasOwnProperty("wasm") ? "wasm" : "evm"
+  const contractId = smartContractObj[contractType]
+  await ensureAccount(accountId, 0, balance)
+  await ensureContract(contractId, 0, balance)
+  const entity = new BondAndStake(`${event.block.block.header.number}-${event.idx.toString()}`)
+  entity.accountId = accountId
+  entity.contractId = contractId
+  entity.contractType = ContractType[contractType.toUpperCase()]
+  entity.amount = balance
+  entity.timestamp = event.block.timestamp
+  await entity.save()
+}
+
+export async function handleUnbondAndUnstake(event: SubstrateEvent): Promise<void> {
+  const {
+    event: {
+      data: [account, smartContract, balanceOf],
+    },
+  } = event
+  const accountId = account.toString()
+  const balance = correctBalance((balanceOf as Balance).toBigInt())
+  const smartContractObj = JSON.parse(smartContract.toString())
+  const contractType = smartContractObj.hasOwnProperty("wasm") ? "wasm" : "evm"
+  const contractId = smartContractObj[contractType]
+  await ensureAccount(accountId, 0, -balance)
+  await ensureContract(contractId, 0, -balance)
+  const entity = new UnbondAndUnstake(`${event.block.block.header.number}-${event.idx.toString()}`)
+  entity.accountId = accountId
+  entity.contractId = contractId
+  entity.contractType = ContractType[contractType.toUpperCase()]
+  entity.amount = balance
+  entity.timestamp = event.block.timestamp
+  await entity.save()
+}
 
 export async function handleDAppStakingReward(event: SubstrateEvent): Promise<void> {
   const {
@@ -14,9 +58,8 @@ export async function handleDAppStakingReward(event: SubstrateEvent): Promise<vo
   const smartContractObj = JSON.parse(smartContract.toString())
   const contractType = smartContractObj.hasOwnProperty("wasm") ? "wasm" : "evm"
   const contractId = smartContractObj[contractType]
-  // logger.info("\nevm: " + contractId)
-  await ensureAccount(accountId, balance)
-  await ensureContract(contractId, balance)
+  await ensureAccount(accountId, balance, 0)
+  await ensureContract(contractId, balance, 0)
   await ensureAllClaimedReward(balance)
   const entity = new DAppStakingReward(`${event.block.block.header.number}-${event.idx.toString()}`)
   entity.accountId = accountId
@@ -28,30 +71,34 @@ export async function handleDAppStakingReward(event: SubstrateEvent): Promise<vo
   await entity.save()
 }
 
-async function ensureAccount(accountId: string, balance: number): Promise<void> {
+async function ensureAccount(accountId: string, reward: number = 0, staking: number = 0): Promise<void> {
   let account = await Account.get(accountId)
   if (!account) {
     account = new Account(accountId)
     account.totalRewarded = 0
+    account.totalStaking = 0
   }
-  account.totalRewarded += balance
+  account.totalRewarded += reward
+  account.totalStaking += staking
   await account.save()
 }
 
-async function ensureContract(contractId: string, balance: number): Promise<void> {
+async function ensureContract(contractId: string, balance: number = 0, staked: number = 0): Promise<void> {
   let contract = await Contract.get(contractId)
   if (!contract) {
     contract = new Contract(contractId)
     contract.totalReward = 0
+    contract.totalStaked = 0
   }
   contract.totalReward += balance
+  contract.totalStaked += staked
   await contract.save()
 }
 
 async function ensureAllClaimedReward(balance: number): Promise<void> {
   let allClaimedReward = await AllClaimedReward.get("1")
   if (!allClaimedReward) {
-    let allClaimedReward = new AllClaimedReward("1")
+    allClaimedReward = new AllClaimedReward("1")
     allClaimedReward.amount = 0
     allClaimedReward.count = BigInt(0)
   }

@@ -22,3 +22,13 @@ dataSources:
           filter:
             module: dappsStaking
             method: Reward
+        - handler: handleBondAndStake
+          kind: substrate/EventHandler
+          filter:
+            module: dappsStaking
+            method: BondAndStake
+        - handler: handleUnbondAndUnstake
+          kind: substrate/EventHandler
+          filter:
+            module: dappsStaking
+            method: UnbondAndUnstake
