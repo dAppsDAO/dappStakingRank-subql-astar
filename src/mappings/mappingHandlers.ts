@@ -9,14 +9,8 @@ export async function handleBondAndStake(event: SubstrateEvent): Promise<void> {
       data: [account, smartContract, balanceOf],
     },
   } = event
-  logger.info("BondAndStake")
-  logger.info("\nblocknumber: " + event.block.block.header.number)
-  logger.info("\naccount: " + account)
-  logger.info("\nsmartContract: " + smartContract.toString())
-  logger.info("\nbalanceOf: " + balanceOf)
   const accountId = account.toString()
   const balance = correctBalance((balanceOf as Balance).toBigInt())
-  logger.info("\nbalance: " + balance)
   const smartContractObj = JSON.parse(smartContract.toString())
   const contractType = smartContractObj.hasOwnProperty("wasm") ? "wasm" : "evm"
   const contractId = smartContractObj[contractType]
@@ -37,11 +31,6 @@ export async function handleUnbondAndUnstake(event: SubstrateEvent): Promise<voi
       data: [account, smartContract, balanceOf],
     },
   } = event
-  logger.info("UnbondAndUnstake")
-  logger.info("\nblocknumber: " + event.block.block.header.number)
-  logger.info("\naccount: " + account)
-  logger.info("\nsmartContract: " + smartContract.toString())
-  logger.info("\nbalanceOf: " + balanceOf)
   const accountId = account.toString()
   const balance = correctBalance((balanceOf as Balance).toBigInt())
   const smartContractObj = JSON.parse(smartContract.toString())
@@ -49,7 +38,6 @@ export async function handleUnbondAndUnstake(event: SubstrateEvent): Promise<voi
   const contractId = smartContractObj[contractType]
   await ensureAccount(accountId, 0, -balance)
   await ensureContract(contractId, 0, -balance)
-  logger.info("\nbalance: " + balance)
   const entity = new UnbondAndUnstake(`${event.block.block.header.number}-${event.idx.toString()}`)
   entity.accountId = accountId
   entity.contractId = contractId
@@ -65,13 +53,11 @@ export async function handleDAppStakingReward(event: SubstrateEvent): Promise<vo
       data: [account, smartContract, era, balanceOf],
     },
   } = event
-  logger.info("DAppStakingReward")
   const balance = correctBalance((balanceOf as Balance).toBigInt())
   const accountId = account.toString()
   const smartContractObj = JSON.parse(smartContract.toString())
   const contractType = smartContractObj.hasOwnProperty("wasm") ? "wasm" : "evm"
   const contractId = smartContractObj[contractType]
-  // logger.info("\nevm: " + contractId)
   await ensureAccount(accountId, balance, 0)
   await ensureContract(contractId, balance, 0)
   await ensureAllClaimedReward(balance)
@@ -86,10 +72,6 @@ export async function handleDAppStakingReward(event: SubstrateEvent): Promise<vo
 }
 
 async function ensureAccount(accountId: string, reward: number = 0, staking: number = 0): Promise<void> {
-  logger.info("staking")
-  logger.info(staking)
-  logger.info("reward")
-  logger.info(reward)
   let account = await Account.get(accountId)
   if (!account) {
     account = new Account(accountId)
